@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f7f4ef">
+<title>My Food Planner</title>
+<style>
+:root{--bg:#f7f4ef;--card:#fffefa;--ink:#292a26;--muted:#77786f;--line:#e7e2d9;--green:#476b55;--orange:#c77d4b;--red:#a33e36;--soft:#e7efe8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:860px;margin:auto;padding:20px 13px 44px}h1{font-size:clamp(1.8rem,6vw,2.35rem);letter-spacing:-1px;margin:5px 0}h2{font-size:1.08rem;margin:0 0 13px}.subtitle{color:var(--muted);margin:0 0 18px}.panel,.metric{background:var(--card);border:1px solid var(--line);border-radius:17px;padding:15px;margin-bottom:14px}.summary{display:grid;grid-template-columns:1fr 1fr;gap:12px}.metric{margin:0}.metric-title{font-size:.85rem;color:var(--muted)}.metric strong{font-size:clamp(1.4rem,5vw,1.85rem);display:block;margin:6px 0}.metric strong small{font-size:.82rem;color:var(--muted)}.track{height:8px;background:#eeece6;border-radius:20px;overflow:hidden;margin-top:9px}.fill{height:100%;width:0;background:var(--green);transition:width .2s}.fill.cal{background:var(--orange)}.remaining{font-size:.78rem;color:var(--muted);margin-top:6px}label{display:block;font-size:.8rem;color:var(--muted);font-weight:650;margin:0 0 5px}input,select,button{font:inherit;border-radius:10px;padding:11px}input,select{width:100%;min-width:0;border:1px solid var(--line);background:white;color:var(--ink)}input:focus,select:focus{outline:2px solid #b7cbbb;border-color:var(--green)}button{border:0;font-weight:700;cursor:pointer}button:disabled{opacity:.6;cursor:wait}.primary{background:var(--green);color:white}.secondary{background:#efede7;color:var(--ink)}.danger{background:#f8e9e6;color:var(--red)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.full{grid-column:1/-1}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.note,.hint{font-size:.8rem;color:var(--muted);line-height:1.5}.hint{margin:7px 0 0}.status{font-size:.8rem;color:var(--green);margin:8px 0 0}.lookup{display:grid;grid-template-columns:1fr auto;gap:8px}.result{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;background:white}.result-title{font-weight:750}.result-detail{color:var(--muted);font-size:.84rem;margin:4px 0 10px}.meal{border-top:1px solid var(--line);padding:13px 0}.meal:first-child{border-top:0}.mealhead{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px}.mealtotal{font-size:.78rem;color:var(--muted);text-align:right}.food{display:flex;align-items:center;gap:8px;border-top:1px dashed var(--line);padding:10px 0}.foodinfo{flex:1;min-width:0;overflow-wrap:anywhere}.foodmeta{font-size:.8rem;color:var(--muted);margin-top:3px}.foodnums{text-align:right;font-size:.82rem;white-space:nowrap}.food button{padding:7px 9px;font-size:.77rem}.empty{color:var(--muted);font-size:.85rem;padding:8px 0}.pill{display:inline-block;border-radius:99px;background:var(--soft);color:var(--green);font-size:.73rem;padding:3px 8px;font-weight:700}.small-btn{font-size:.78rem;padding:8px 10px}
+@media(max-width:480px){main{padding:14px 10px 30px}.panel,.metric{padding:12px}.food{flex-wrap:wrap}.foodinfo{flex-basis:42%}.lookup{grid-template-columns:1fr}.mealhead{align-items:flex-start}}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="pill">YOUR DAILY FOOD DIARY</div>
+  <h1>My Food Planner 🌿</h1>
+  <p class="subtitle">Track meals, calories and protein — and save your favourite foods for next time.</p>
+</header>
+
+<section class="panel">
+  <label for="day">Diary date</label>
+  <input type="date" id="day">
+  <div class="status" id="status">● Saving automatically on this device</div>
+</section>
+
+<section class="summary" aria-label="Daily nutrition totals">
+  <div class="metric">
+    <div class="metric-title">🔥 Calories</div>
+    <strong><span id="totalCal">0</span> <small>/ <span id="showCalGoal">1,200</span> kcal</small></strong>
+    <div class="track"><div class="fill cal" id="calFill"></div></div>
+    <div class="remaining" id="calRemaining">1,200 kcal remaining</div>
+  </div>
+  <div class="metric">
+    <div class="metric-title">💪 Protein</div>
+    <strong><span id="totalProtein">0</span> <small>/ <span id="showProteinGoal">90</span> g</small></strong>
+    <div class="track"><div class="fill" id="proteinFill"></div></div>
+    <div class="remaining" id="proteinRemaining">90 g to goal</div>
+  </div>
+</section>
+
+<section class="panel" style="margin-top:14px">
+  <h2>🔎 Find food automatically</h2>
+  <label for="foodSearch">Food and amount</label>
+  <div class="lookup">
+    <input id="foodSearch" placeholder="e.g. 1 boiled egg, 100g salmon, Coco Pops">
+    <button type="button" class="primary" id="findFood">Find food</button>
+  </div>
+  <p class="hint">Searches the built-in food list first, then tries Open Food Facts online for packaged foods. Nutrition results are estimates; an online result may be a different brand or serving, so check it before adding.</p>
+  <div id="searchResult" aria-live="polite"></div>
+</section>
+
+<section class="panel">
+  <h2 id="formHeading">＋ Add food to your diary</h2>
+  <form id="foodForm">
+    <div class="grid">
+      <div class="full">
+        <label for="name">Food name</label>
+        <input id="name" required maxlength="120" placeholder="e.g. Homemade tuna spread">
+      </div>
+      <div>
+        <label for="meal">Meal</label>
+        <select id="meal">
+          <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snacks</option><option>Drinks</option>
+        </select>
+      </div>
+      <div>
+        <label for="amount">Serving size / quantity</label>
+        <input id="amount" maxlength="80" placeholder="e.g. 2 tablespoons">
+      </div>
+      <div>
+        <label for="calories">Calories (kcal)</label>
+        <input id="calories" type="number" min="0" max="20000" step="any" required placeholder="e.g. 85">
+      </div>
+      <div>
+        <label for="protein">Protein (g)</label>
+        <input id="protein" type="number" min="0" max="1000" step="any" required placeholder="e.g. 10">
+      </div>
+      <div class="full">
+        <label for="notes">Notes (optional)</label>
+        <input id="notes" maxlength="200" placeholder="e.g. made with light mayonnaise">
+      </div>
+    </div>
+    <div class="actions">
+      <button class="primary" type="submit" id="submitBtn">Add to diary</button>
+      <button class="secondary" type="button" id="saveAsCustom">Save food for future use</button>
+      <button class="secondary" type="button" id="cancelEdit" hidden>Cancel edit</button>
+      <button class="secondary" type="button" id="resetForm">Clear fields</button>
+    </div>
+    <p class="status" id="message"></p>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>⭐ My Saved Foods</h2>
+  <p class="note">Save a custom food once, then reuse it without re-entering its nutrition values. The serving and values below are for one saved serving.</p>
+  <div id="savedFoodList"></div>
+  <p class="empty" id="savedFoodEmpty">No saved foods yet. Add one using the form above.</p>
+</section>
+
+<section class="panel">
+  <h2>Today's meals</h2>
+  <div id="mealsList"></div>
+</section>
+
+<section class="panel">
+  <h2>Daily targets & backup</h2>
+  <div class="grid">
+    <div><label for="calGoal">Calorie target (kcal)</label><input id="calGoal" type="number" min="1" max="20000" value="1200"></div>
+    <div><label for="proteinGoal">Protein target (g)</label><input id="proteinGoal" type="number" min="1" max="1000" value="90"></div>
+  </div>
+  <div class="actions">
+    <button class="primary" type="button" id="saveGoals">Save targets</button>
+    <button class="secondary" type="button" id="exportBtn">Export backup</button>
+    <button class="secondary" type="button" id="importBtn">Import backup</button>
+    <input id="importFile" type="file" accept=".json,application/json" hidden>
+    <button class="danger" type="button" id="clearDay">Clear this day</button>
+  </div>
+  <p class="note">Your diary and saved foods are stored in this browser on this device. Export a backup regularly. GitHub Pages does not automatically sync local storage between different browsers or devices.</p>
+</section>
+</main>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const MEALS = ["Breakfast","Lunch","Dinner","Snacks","Drinks"];
+const ICONS = ["🍳","🥗","🍽️","🍓","🥤"];
+const KEY = "myFoodPlanner_full_v1";
+let data = {days:{}, customFoods:[], goals:{calories:1200,protein:90}};
+let editingId = null;
+let lastSearchResult = null;
+
+/* Offline estimates per stated serving. These are not AI-generated. */
+const FOODS = [
+ {names:["boiled egg","boiled eggs","egg","eggs","one egg","1 egg","1 boiled egg","one boiled egg"],label:"Medium boiled egg",unit:"egg",cal:78,p:6.3},
+ {names:["fried egg","fried eggs"],label:"Fried egg (no added fat)",unit:"egg",cal:90,p:6.3},
+ {names:["scrambled egg","scrambled eggs"],label:"Scrambled egg (no added fat)",unit:"egg",cal:90,p:6.5},
+ {names:["egg white","egg whites"],label:"Large egg white",unit:"egg white",cal:17,p:3.6},
+ {names:["white toast","slice toast","slice of toast","white bread","toast"],label:"Slice of white bread/toast",unit:"slice",cal:80,p:2.7},
+ {names:["wholemeal toast","brown toast","wholemeal bread","brown bread"],label:"Slice of wholemeal bread/toast",unit:"slice",cal:85,p:3.5},
+ {names:["butter"],label:"Butter",unit:"teaspoon (5g)",cal:36,p:0},
+ {names:["clover light","clover spread","light spread","margarine"],label:"Light spread",unit:"teaspoon (5g)",cal:18,p:0},
+ {names:["porridge","oatmeal","oats"],label:"Dry oats, made with water",unit:"40g portion",cal:152,p:5.2,gramsBase:40},
+ {names:["semi skimmed milk","semi-skimmed milk"],label:"Semi-skimmed milk",unit:"100ml",cal:47,p:3.6,mlBase:100},
+ {names:["whole milk"],label:"Whole milk",unit:"100ml",cal:64,p:3.3,mlBase:100},
+ {names:["skimmed milk"],label:"Skimmed milk",unit:"100ml",cal:35,p:3.6,mlBase:100},
+ {names:["0% greek yogurt","fat free greek yogurt","fat-free greek yogurt","fat free greek yoghurt"],label:"0% Greek yoghurt",unit:"100g",cal:59,p:10.3,gramsBase:100},
+ {names:["greek yogurt","greek yoghurt","plain greek yogurt","plain greek yoghurt"],label:"Plain Greek yoghurt",unit:"100g",cal:120,p:9,gramsBase:100},
+ {names:["chicken breast","cooked chicken breast","chicken"],label:"Cooked skinless chicken breast",unit:"100g",cal:165,p:31,gramsBase:100},
+ {names:["salmon","cooked salmon","salmon fillet"],label:"Cooked salmon",unit:"100g",cal:206,p:22,gramsBase:100},
+ {names:["basa","basa fillet"],label:"Cooked basa fillet",unit:"100g",cal:90,p:18,gramsBase:100},
+ {names:["haddock","cooked haddock"],label:"Cooked haddock",unit:"100g",cal:90,p:20,gramsBase:100},
+ {names:["tuna in spring water","tinned tuna","canned tuna","tuna"],label:"Drained tuna in water",unit:"100g",cal:116,p:25.5,gramsBase:100},
+ {names:["hellmann's light mayonnaise","hellmanns light mayonnaise","light mayonnaise"],label:"Light mayonnaise",unit:"tablespoon (15g)",cal:35,p:.2},
+ {names:["mayonnaise","mayo"],label:"Regular mayonnaise",unit:"tablespoon (15g)",cal:100,p:.1},
+ {names:["cooked rice","white rice","rice"],label:"Cooked white rice",unit:"100g",cal:130,p:2.7,gramsBase:100},
+ {names:["boiled potato","boiled potatoes","potato","potatoes"],label:"Boiled potato",unit:"100g",cal:87,p:1.9,gramsBase:100},
+ {names:["sweet potato fries","sweet potato chips"],label:"Sweet potato fries (typical)",unit:"100g",cal:160,p:2,gramsBase:100},
+ {names:["broccoli","boiled broccoli"],label:"Cooked broccoli",unit:"100g",cal:35,p:2.4,gramsBase:100},
+ {names:["mixed vegetables","boiled vegetables","steamed vegetables","veg"],label:"Mixed cooked vegetables",unit:"100g",cal:50,p:2.5,gramsBase:100},
+ {names:["banana"],label:"Medium banana",unit:"banana",cal:105,p:1.3},
+ {names:["apple"],label:"Medium apple",unit:"apple",cal:95,p:.5},
+ {names:["medjool date","medjool dates"],label:"Medjool date",unit:"date",cal:66,p:.4},
+ {names:["dates","date"],label:"Date (typical)",unit:"date",cal:23,p:.2},
+ {names:["almonds","almond"],label:"Almonds",unit:"10 almonds",cal:69,p:2.5},
+ {names:["peanut butter"],label:"Peanut butter",unit:"tablespoon (16g)",cal:94,p:3.6},
+ {names:["protein shake"],label:"Protein shake made with water (typical)",unit:"shake",cal:120,p:24},
+ {names:["coco pops","cocopops"],label:"Coco Pops (milk not included)",unit:"30g",cal:114,p:2,gramsBase:30},
+ {names:["dark chocolate"],label:"Dark chocolate",unit:"10g",cal:60,p:.8,gramsBase:10},
+ {names:["orange juice"],label:"Orange juice",unit:"100ml",cal:45,p:.7,mlBase:100}
+];
+
+function today(){
+ const d=new Date();
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+const day=()=>$("day").value||today();
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function fmt(n){return Number(n).toLocaleString(undefined,{maximumFractionDigits:1});}
+function round(n){return Math.round(n*10)/10;}
+function entries(){return data.days[day()]||[];}
+function makeId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,9);}
+
+function save(){
+ try{
+  localStorage.setItem(KEY,JSON.stringify(data));
+  $("status").textContent="● Saved automatically on this device";
+ }catch(e){
+  $("status").textContent="⚠ Browser storage unavailable — export a backup";
+ }
+}
+function load(){
+ try{
+  const raw=localStorage.getItem(KEY);
+  if(raw){
+   const d=JSON.parse(raw);
+   data={
+    days:d.days&&typeof d.days==="object"?d.days:{},
+    customFoods:Array.isArray(d.customFoods)?d.customFoods:[],
+    goals:{calories:Number(d.goals?.calories)||1200,protein:Number(d.goals?.protein)||90}
+   };
+  }
+ }catch(e){$("status").textContent="⚠ Could not read saved data";}
+ $("calGoal").value=data.goals.calories;
+ $("proteinGoal").value=data.goals.protein;
+}
+function sum(list){
+ return list.reduce((a,e)=>({cal:a.cal+Number(e.calories||0),p:a.p+Number(e.protein||0)}),{cal:0,p:0});
+}
+function render(){
+ const all=entries(),t=sum(all),cg=Math.max(1,Number(data.goals.calories)||1200),pg=Math.max(1,Number(data.goals.protein)||90);
+ $("totalCal").textContent=fmt(round(t.cal));$("totalProtein").textContent=fmt(round(t.p));
+ $("showCalGoal").textContent=fmt(cg);$("showProteinGoal").textContent=fmt(pg);
+ $("calFill").style.width=Math.min(100,t.cal/cg*100)+"%";
+ $("proteinFill").style.width=Math.min(100,t.p/pg*100)+"%";
+ $("calRemaining").textContent=t.cal<=cg?fmt(round(cg-t.cal))+" kcal remaining":fmt(round(t.cal-cg))+" kcal over target";
+ $("proteinRemaining").textContent=t.p>=pg?fmt(round(t.p-pg))+" g above goal":fmt(round(pg-t.p))+" g to goal";
+ $("mealsList").innerHTML=MEALS.map((m,i)=>{
+  const list=all.filter(e=>e.meal===m),s=sum(list);
+  return `<div class="meal"><div class="mealhead"><strong>${ICONS[i]} ${m}</strong><span class="mealtotal">${fmt(round(s.cal))} kcal · ${fmt(round(s.p))} g protein</span></div>
+  ${list.length?list.map(e=>`<div class="food"><div class="foodinfo"><strong>${esc(e.name)}</strong><div class="foodmeta">${esc(e.amount||"Amount not specified")}${e.notes?" · "+esc(e.notes):""}</div></div><div class="foodnums"><strong>${fmt(e.calories)} kcal</strong><div class="foodmeta">${fmt(e.protein)} g protein</div></div><button class="secondary" type="button" data-edit-entry="${esc(e.id)}">Edit</button><button class="danger" type="button" data-delete-entry="${esc(e.id)}">Delete</button></div>`).join(""):`<div class="empty">Nothing logged yet.</div>`}
+  </div>`;
+ }).join("");
+ renderCustomFoods();
+}
+function renderCustomFoods(){
+ const box=$("savedFoodList"),empty=$("savedFoodEmpty");
+ if(!data.customFoods.length){box.innerHTML="";empty.hidden=false;return;}
+ empty.hidden=true;
+ box.innerHTML=data.customFoods.map(f=>`<div class="food"><div class="foodinfo"><strong>${esc(f.name)}</strong><div class="foodmeta">${esc(f.amount||"1 serving")} · ${fmt(f.calories)} kcal · ${fmt(f.protein)} g protein</div></div><button class="primary small-btn" type="button" data-use-saved="${esc(f.id)}">Add</button><button class="secondary small-btn" type="button" data-edit-saved="${esc(f.id)}">Edit</button><button class="danger small-btn" type="button" data-delete-saved="${esc(f.id)}">Delete</button></div>`).join("");
+}
+function clearForm(){
+ editingId=null;$("foodForm").reset();$("formHeading").textContent="＋ Add food to your diary";$("submitBtn").textContent="Add to diary";$("cancelEdit").hidden=true;
+}
+function fillForm(f){
+ $("name").value=f.name;$("amount").value=f.amount||"";$("calories").value=f.calories;$("protein").value=f.protein;
+ if(f.meal)$("meal").value=f.meal;
+ $("notes").value=f.notes||"";
+}
+function parseFood(input){
+ const q=input.toLowerCase().trim().replace(/,/g,"");
+ let quantity=1,query=q,grams=null,ml=null;
+ let m=q.match(/^(\d+(?:\.\d+)?)\s*(g|grams?|ml|millilitres?|milliliters?)\s+(.+)$/);
+ if(m){quantity=Number(m[1]);query=m[3];if(/^(g|gram)/.test(m[2]))grams=quantity;else ml=quantity;}
+ else{
+  m=q.match(/^(\d+(?:\.\d+)?)\s*(?:x\s*)?(.+)$/);
+  if(m){quantity=Number(m[1]);query=m[2].trim();}
+ }
+ let best=null,bestLen=0;
+ for(const f of FOODS)for(const n of f.names){
+  if(query===n||query.includes(n)||n.includes(query)){
+   if(n.length>bestLen){best=f;bestLen=n.length;}
+  }
+ }
+ if(!best)return null;
+ let multiplier=quantity,display="";
+ if(grams!==null){
+  if(best.gramsBase)multiplier=grams/best.gramsBase;
+  else return {food:best,multiplier:null,reason:"This food has a standard serving, but no gram conversion in the built-in list."};
+  display=grams+"g";
+ }else if(ml!==null){
+  if(best.mlBase)multiplier=ml/best.mlBase;
+  else return {food:best,multiplier:null,reason:"This food has a standard serving, but no ml conversion in the built-in list."};
+  display=ml+"ml";
+ }else{display=quantity+" × "+best.unit;}
+ return {food:best,multiplier,display};
+}
+function showFoodResult(f,display,cal,protein,source){
+ lastSearchResult={name:f.label||f.name,amount:display,calories:cal,protein,source};
+ $("searchResult").innerHTML=`<div class="result"><div class="result-title">${esc(f.label||f.name)}</div><div class="result-detail">${esc(display||"1 serving")} · ${fmt(cal)} kcal · ${fmt(protein)} g protein <br>Source: ${esc(source)}</div><div class="actions"><button type="button" class="primary" id="addFoundFood">Use this food</button><button type="button" class="secondary" id="saveFoundFood">Save for future</button></div></div>`;
+ $("addFoundFood").onclick=()=>{
+  fillForm({name:f.label||f.name,amount:display,calories:cal,protein,meal:$("meal").value});
+  $("message").textContent="Check the serving and meal, then press Add to diary.";
+  $("foodForm").scrollIntoView({behavior:"smooth",block:"start"});
+ };
+ $("saveFoundFood").onclick=()=>{
+  fillForm({name:f.label||f.name,amount:display,calories:cal,protein,meal:$("meal").value});
+  saveCurrentFood();
+ };
+}
+async function findFood(){
+ const input=$("foodSearch").value.trim();if(!input)return;
+ const button=$("findFood");button.disabled=true;button.textContent="Searching…";
+ $("searchResult").innerHTML='<div class="result">Looking in your food list…</div>';
+ try{
+  const custom=data.customFoods.find(f=>input.toLowerCase().includes(f.name.toLowerCase())||f.name.toLowerCase().includes(input.toLowerCase()));
+  if(custom){
+   showFoodResult({label:custom.name},custom.amount||"1 serving",custom.calories,custom.protein,"Your saved foods");
+   return;
+  }
+  const local=parseFood(input);
+  if(local&&local.multiplier!==null){
+   showFoodResult(local.food,local.display,round(local.food.cal*local.multiplier),round(local.food.p*local.multiplier),"Built-in nutrition estimates");
+   return;
+  }
+  /* Open Food Facts is a public product database, not an AI model.
+     It can help find packaged products; availability and nutrition data vary. */
+  const query=input.replace(/^\d+(?:\.\d+)?\s*(g|grams?|ml)\s+/i,"").trim();
+  const url="https://world.openfoodfacts.org/cgi/search.pl?search_terms="+encodeURIComponent(query)+"&search_simple=1&action=process&json=1&page_size=8&fields=product_name,brands,nutriments,serving_size";
+  const response=await fetch(url,{headers:{"Accept":"application/json"}});
+  if(!response.ok)throw new Error("Online food search unavailable");
+  const result=await response.json();
+  const products=(result.products||[]).filter(p=>p.product_name&&p.nutriments&&(
+    Number.isFinite(Number(p.nutriments["energy-kcal_100g"]))||
+    Number.isFinite(Number(p.nutriments["energy-kcal_value"]))||
+    Number.isFinite(Number(p.nutriments.proteins_100g))
+  ));
+  if(!products.length){
+   $("searchResult").innerHTML='<div class="result"><strong>No matching food found</strong><p class="result-detail">Try a simpler name, use a saved food, or enter the nutrition values manually below. This page does not have an AI model connected.</p></div>';
+   return;
+  }
+  $("searchResult").innerHTML='<div class="result"><strong>Choose a product</strong><p class="result-detail">Online product results. Check the brand and serving carefully.</p>'+products.slice(0,6).map((p,i)=>{
+   const n=p.nutriments||{},kcal=Number(n["energy-kcal_100g"]??n["energy-kcal_value"]),prot=Number(n.proteins_100g??n.proteins_value);
+   return `<div class="food"><div class="foodinfo"><strong>${esc(p.product_name)}</strong><div class="foodmeta">${esc(p.brands||"Brand not listed")} · per 100g when available</div></div><div class="foodnums">${Number.isFinite(kcal)?fmt(kcal)+" kcal":"kcal n/a"}<div class="foodmeta">${Number.isFinite(prot)?fmt(prot)+" g protein":"protein n/a"}</div></div><button class="primary small-btn" type="button" data-off-product="${i}">Select</button></div>`;
+  }).join("")+'</div>';
+  $("searchResult").querySelectorAll("[data-off-product]").forEach(btn=>{
+   btn.addEventListener("click",()=>{
+    const p=products[Number(btn.dataset.offProduct)],n=p.nutriments||{};
+    const kcal=Number(n["energy-kcal_100g"]??n["energy-kcal_value"]),prot=Number(n.proteins_100g??n.proteins_value);
+    if(!Number.isFinite(kcal)||!Number.isFinite(prot)){alert("This product does not have complete calorie and protein values.");return;}
+    const typed=input.match(/^(\d+(?:\.\d+)?)\s*(g|grams?)\s+/i);
+    const grams=typed?Number(typed[1]):100;
+    const multiplier=grams/100;
+    const label=(p.product_name||"Food")+(p.brands?" ("+p.brands+")":"");
+    showFoodResult({label},grams+"g",round(kcal*multiplier),round(prot*multiplier),"Open Food Facts (per 100g)");
+   });
+  });
+ }catch(e){
+  $("searchResult").innerHTML='<div class="result"><strong>Online search unavailable</strong><p class="result-detail">The internet lookup could not be reached. Try a built-in food such as “1 boiled egg”, or enter values manually. You can still use saved foods offline.</p></div>';
+ }finally{
+  button.disabled=false;button.textContent="Find food";
+ }
+}
+function saveCurrentFood(){
+ const name=$("name").value.trim(),cal=Number($("calories").value),protein=Number($("protein").value),amount=$("amount").value.trim(),meal=$("meal").value;
+ if(!name||$("calories").value===""||$("protein").value===""||!Number.isFinite(cal)||!Number.isFinite(protein)||cal<0||protein<0){
+  $("message").textContent="Enter the food name, calories and protein before saving.";return;
+ }
+ const existing=data.customFoods.find(f=>f.name.toLowerCase()===name.toLowerCase());
+ const food={id:existing?existing.id:makeId(),name,calories:cal,protein,amount,meal};
+ if(existing){data.customFoods=data.customFoods.map(f=>f.id===existing.id?food:f);$("message").textContent="Saved food updated.";}
+ else{data.customFoods.push(food);$("message").textContent="Food saved for future use!";}
+ save();renderCustomFoods();
+}
+$("findFood").addEventListener("click",findFood);
+$("foodSearch").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();findFood();}});
+$("foodForm").addEventListener("submit",e=>{
+ e.preventDefault();
+ const name=$("name").value.trim(),cal=Number($("calories").value),protein=Number($("protein").value);
+ if(!name||$("calories").value===""||$("protein").value===""||!Number.isFinite(cal)||!Number.isFinite(protein)||cal<0||protein<0){$("message").textContent="Enter a food name and valid nutrition values.";return;}
+ const list=data.days[day()]||[];
+ const item={id:editingId||makeId(),name,meal:$("meal").value,amount:$("amount").value.trim(),calories:cal,protein,notes:$("notes").value.trim()};
+ if(editingId){const i=list.findIndex(x=>x.id===editingId);if(i>=0)list[i]=item;}else list.push(item);
+ data.days[day()]=list;save();render();clearForm();$("message").textContent="Food added and saved.";
+});
+$("saveAsCustom").addEventListener("click",saveCurrentFood);
+$("cancelEdit").addEventListener("click",clearForm);
+$("resetForm").addEventListener("click",clearForm);
+$("day").addEventListener("change",()=>{clearForm();render();});
+$("mealsList").addEventListener("click",e=>{
+ const edit=e.target.closest("[data-edit-entry]")?.dataset.editEntry,del=e.target.closest("[data-delete-entry]")?.dataset.deleteEntry;
+ if(edit){const x=entries().find(y=>y.id===edit);if(!x)return;editingId=x.id;fillForm(x);$("notes").value=x.notes||"";$("formHeading").textContent="✎ Edit food entry";$("submitBtn").textContent="Save changes";$("cancelEdit").hidden=false;$("foodForm").scrollIntoView({behavior:"smooth"});}
+ if(del){const x=entries().find(y=>y.id===del);if(!x||!confirm("Delete "+x.name+" from this day?"))return;data.days[day()]=entries().filter(y=>y.id!==del);save();render();clearForm();}
+});
+$("savedFoodList").addEventListener("click",e=>{
+ const use=e.target.closest("[data-use-saved]")?.dataset.useSaved,edit=e.target.closest("[data-edit-saved]")?.dataset.editSaved,del=e.target.closest("[data-delete-saved]")?.dataset.deleteSaved;
+ if(use){const f=data.customFoods.find(x=>x.id===use);if(!f)return;fillForm(f);editingId=null;$("formHeading").textContent="＋ Add saved food to diary";$("submitBtn").textContent="Add to diary";$("cancelEdit").hidden=true;$("message").textContent="Saved food loaded. Press Add to diary to log it.";$("foodForm").scrollIntoView({behavior:"smooth"});}
+ if(edit){const f=data.customFoods.find(x=>x.id===edit);if(!f)return;fillForm(f);$("message").textContent="Edit the food details, then tap Save food for future use. The saved food with this name will be updated.";$("foodForm").scrollIntoView({behavior:"smooth"});}
+ if(del){const f=data.customFoods.find(x=>x.id===del);if(!f||!confirm("Delete "+f.name+" from your saved food library?"))return;data.customFoods=data.customFoods.filter(x=>x.id!==del);save();renderCustomFoods();}
+});
+$("saveGoals").addEventListener("click",()=>{
+ const calories=Number($("calGoal").value),protein=Number($("proteinGoal").value);
+ if(calories<=0||protein<=0){alert("Targets must be greater than zero.");return;}
+ data.goals={calories,protein};save();render();
+});
+$("clearDay").addEventListener("click",()=>{
+ if(!entries().length){alert("No entries for this day.");return;}
+ if(!confirm("Delete all food entries for "+day()+"? Your saved food library will remain."))return;
+ data.days[day()]=[];save();render();clearForm();
+});
+$("exportBtn").addEventListener("click",()=>{
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download="my-food-planner-backup.json";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+$("importBtn").addEventListener("click",()=>$("importFile").click());
+$("importFile").addEventListener("change",async e=>{
+ const file=e.target.files[0];if(!file)return;
+ try{
+  const d=JSON.parse(await file.text());
+  if(!d.days||typeof d.days!=="object")throw new Error("Invalid backup");
+  if(!confirm("Replace the current diary and saved foods with this backup?"))return;
+  data={days:d.days,customFoods:Array.isArray(d.customFoods)?d.customFoods:[],goals:{calories:Number(d.goals?.calories)||1200,protein:Number(d.goals?.protein)||90}};
+  $("calGoal").value=data.goals.calories;$("proteinGoal").value=data.goals.protein;save();render();clearForm();alert("Backup imported successfully.");
+ }catch(err){alert("This doesn't look like a valid Food Planner backup.");}
+ finally{e.target.value="";}
+});
+$("day").value=today();
+load();
+render();
+})();
+</script>
+</body>
+</html>
